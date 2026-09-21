@@ -1,0 +1,49 @@
+<mujoco model="mobile_fetch_base">
+  <!-- Coordinates: +X forward, +Y left, +Z up. All dimensions are metres. -->
+  <compiler angle="degree"/>
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast"/>
+  <visual>
+    <global azimuth="135" elevation="-25"/>
+  </visual>
+  <asset>
+    <texture name="floor_grid" type="2d" builtin="checker"
+             rgb1="0.22 0.25 0.28" rgb2="0.30 0.33 0.36" width="512" height="512"/>
+    <material name="floor_material" texture="floor_grid" texrepeat="6 6" texuniform="true"/>
+  </asset>
+  <default>
+    <geom friction="0.8 0.005 0.0001" solref="0.01 1"/>
+    <joint damping="0.02"/>
+  </default>
+  <worldbody>
+    <light pos="0 -2 4" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
+    <geom name="floor" type="plane" size="3 3 0.1" material="floor_material"/>
+    <body name="base" pos="0 0 0.16">
+      <freejoint name="base_free"/>
+      <geom name="chassis" type="box" size="0.22 0.16 0.05"
+            mass="5" rgba="0.16 0.48 0.72 1"/>
+      <!-- A non-colliding nose marks the forward direction. -->
+      <geom name="front_marker" type="box" pos="0.18 0 0.055"
+            size="0.03 0.09 0.005" mass="0" contype="0" conaffinity="0"
+            rgba="1 0.65 0.1 1"/>
+      <body name="left_wheel" pos="0 0.19 -0.06">
+        <joint name="left_wheel_joint" type="hinge" axis="0 1 0"/>
+        <geom name="left_tire" type="cylinder" size="0.09 0.025"
+              euler="90 0 0" mass="0.3" rgba="0.08 0.08 0.09 1"/>
+      </body>
+      <body name="right_wheel" pos="0 -0.19 -0.06">
+        <joint name="right_wheel_joint" type="hinge" axis="0 1 0"/>
+        <geom name="right_tire" type="cylinder" size="0.09 0.025"
+              euler="90 0 0" mass="0.3" rgba="0.08 0.08 0.09 1"/>
+      </body>
+      <!-- Low-friction spherical supports approximate ball casters.
+           They slide rather than model internal caster rotation. Priority
+           makes their low friction apply when contacting the floor. -->
+      <geom name="front_support" type="sphere" pos="0.17 0 -0.12"
+            size="0.03" mass="0.1" priority="1" friction="0.001 0.0001 0.0001"
+            rgba="0.65 0.68 0.72 1"/>
+      <geom name="rear_support" type="sphere" pos="-0.17 0 -0.12"
+            size="0.03" mass="0.1" priority="1" friction="0.001 0.0001 0.0001"
+            rgba="0.65 0.68 0.72 1"/>
+    </body>
+  </worldbody>
+</mujoco>
