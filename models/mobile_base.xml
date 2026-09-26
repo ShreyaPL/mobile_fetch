@@ -46,4 +46,24 @@
             rgba="0.65 0.68 0.72 1"/>
     </body>
   </worldbody>
+
+  <actuator>
+    <velocity name="left_wheel_motor"
+              joint="left_wheel_joint"
+              gear="1"
+              kv="1"
+              ctrllimited="true"
+              ctrlrange="-10 10"
+              forcelimited="true"
+              forcerange="-2 2"/>
+    
+    <velocity name="right_wheel_motor"
+              joint="right_wheel_joint"
+              gear="1"
+              kv="1"
+              ctrllimited="true"
+              ctrlrange="-10 10"
+              forcelimited="true"
+              forcerange="-2 2"/>
+  </actuator>
 </mujoco>
