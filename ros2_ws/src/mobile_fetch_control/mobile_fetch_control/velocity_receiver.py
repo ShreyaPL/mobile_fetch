@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from rosgraph_msgs.msg import Clock
 
 import time
 import math
@@ -19,6 +20,13 @@ class VelocityReceiver(Node):
             "/cmd_vel",
             self.cmd_vel_callback,
             1,
+        )
+
+        # Clock Publisher
+        self.clock_publisher = self.create_publisher(
+            Clock,
+            "/clock",
+            10,
         )
 
         self.get_logger().info("Velocity receiver is ready.")
@@ -53,6 +61,15 @@ class VelocityReceiver(Node):
             return 0.0, 0.0
 
         return self.linear_speed, self.angular_speed
+
+    def publish_sim_time(self, simulation_time):
+        total_nanoseconds = round(simulation_time * 1_000_000_000)
+
+        msg = Clock()
+        msg.clock.sec = total_nanoseconds // 1_000_000_000
+        msg.clock.nanosec = total_nanoseconds % 1_000_000_000
+        self.clock_publisher.publish(msg)
+
 
 def main(args=None):
     rclpy.init(args=args)

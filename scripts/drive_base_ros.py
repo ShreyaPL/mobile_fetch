@@ -53,6 +53,7 @@ def main():
                 data.ctrl[left_motor_id] = left_speed
                 data.ctrl[right_motor_id] = right_speed
                 mujoco.mj_step(model, data)
+                node.publish_sim_time(data.time)
 
                 #5. Update display and pace the loop
                 viewer.sync()
