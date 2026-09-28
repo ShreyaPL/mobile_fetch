@@ -2,15 +2,23 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 
-class Velocityreceiver(Node):
+import time
+import math
+
+class VelocityReceiver(Node):
     def __init__(self):
         super().__init__("velocity_receiver")
+
+        self.linear_speed = 0.0
+        self.angular_speed = 0.0
+        self.last_command_time = None
+        self.command_timeout = 0.5  #seconds
 
         self.cmd_vel_subscription = self.create_subscription(
             Twist,
             "/cmd_vel",
             self.cmd_vel_callback,
-            10,
+            1,
         )
 
         self.get_logger().info("Velocity receiver is ready.")
@@ -19,14 +27,36 @@ class Velocityreceiver(Node):
         linear_speed = msg.linear.x
         angular_speed = msg.angular.z
 
+        if not (
+            math.isfinite(linear_speed)
+            and math.isfinite(angular_speed)
+        ):
+            self.linear_speed = 0.0
+            self.angular_speed = 0.0
+            self.last_command_time = None
+            self.get_logger().warning("Invalid velocity commands; stopping.")
+
+        self.linear_speed = linear_speed
+        self.angular_speed = angular_speed
+        self.last_command_time = time.monotonic()
         self.get_logger().info(
             f"Received: forward={linear_speed: .2f} m/s, "
             f"turn={angular_speed: .2f} rad/s"
         )
 
+    def get_velocity_command(self):
+        if self.last_command_time is None:
+            return 0.0, 0.0
+
+        command_age = time.monotonic() - self.last_command_time
+        if command_age > self.command_timeout:
+            return 0.0, 0.0
+
+        return self.linear_speed, self.angular_speed
+
 def main(args=None):
     rclpy.init(args=args)
-    node = Velocityreceiver()
+    node = VelocityReceiver()
 
     try:
         rclpy.spin(node)
