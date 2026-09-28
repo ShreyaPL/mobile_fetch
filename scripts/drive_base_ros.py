@@ -22,10 +22,28 @@ def main():
     if left_motor_id < 0 or right_motor_id < 0:
         raise RuntimeError("Could not find both wheel actuators.")
 
+    left_joint_id = mujoco.mj_name2id(
+        model, mujoco.mjtObj.mjOBJ_JOINT, "left_wheel_joint"
+    )
+    right_joint_id = mujoco.mj_name2id(
+        model, mujoco.mjtObj.mjOBJ_JOINT, "right_wheel_joint"
+    )
+
+    if left_joint_id < 0 or right_joint_id < 0:
+        raise RuntimeError("Could not find both wheel joints.")
+
+    left_position_index = model.jnt_qposadr[left_joint_id]
+    right_position_index = model.jnt_qposadr[right_joint_id]
+
+    left_velocity_index = model.jnt_dofadr[left_joint_id]
+    right_velocity_index = model.jnt_dofadr[right_joint_id]
+
     rclpy.init()
     node = VelocityReceiver()
 
     try:
+        joint_publish_period = 0.02
+        next_joint_publish_time = 0.0
         with launch_passive(model, data) as viewer:
             with viewer.lock():
                 viewer.cam.lookat[:] = [0.4, 0, 0.12]
@@ -55,6 +73,27 @@ def main():
                 mujoco.mj_step(model, data)
                 node.publish_sim_time(data.time)
 
+                if data.time >=next_joint_publish_time:
+                    positions = [
+                        data.qpos[left_position_index],
+                        data.qpos[right_position_index],
+                    ]
+
+                    velocities = [
+                        data.qvel[left_velocity_index],
+                        data.qvel[right_velocity_index],
+                    ]
+
+                    node.publish_joint_states(
+                        data.time,
+                        positions,
+                        velocities
+                    )
+
+                    next_joint_publish_time = (
+                        data.time + joint_publish_period
+                    )
+                
                 #5. Update display and pace the loop
                 viewer.sync()
                 elapsed = time.perf_counter() - step_start

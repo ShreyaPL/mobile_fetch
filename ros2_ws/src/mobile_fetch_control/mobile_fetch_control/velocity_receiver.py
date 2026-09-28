@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from rosgraph_msgs.msg import Clock
+from sensor_msgs.msg import JointState
 
 import time
 import math
@@ -26,6 +27,13 @@ class VelocityReceiver(Node):
         self.clock_publisher = self.create_publisher(
             Clock,
             "/clock",
+            10,
+        )
+
+        # Joint state publisher
+        self.joint_state_publisher = self.create_publisher(
+            JointState,
+            "/joint_states",
             10,
         )
 
@@ -69,6 +77,22 @@ class VelocityReceiver(Node):
         msg.clock.sec = total_nanoseconds // 1_000_000_000
         msg.clock.nanosec = total_nanoseconds % 1_000_000_000
         self.clock_publisher.publish(msg)
+
+    def publish_joint_states(self, simulation_time, positions, velocities):
+        total_nanonseconds = round(simulation_time * 1_000_000_000)
+
+        msg = JointState()
+        msg.header.stamp.sec = total_nanonseconds // 1_000_000_000
+        msg.header.stamp.nanosec = total_nanonseconds % 1_000_000_000
+
+        msg.name = [
+            "left_wheel_joint",
+            "right_wheel_joint",
+        ]
+        msg.position = [float(value) for value in positions]
+        msg.velocity = [float(value) for value in velocities]
+
+        self.joint_state_publisher.publish(msg)
 
 
 def main(args=None):
